@@ -3,4 +3,6 @@
 /client/node_modules
 /client/scripts/certs
 /client/scripts/domains.txt
+/client/scripts/server.txt
 /client/scripts/private_key.pem
+/client/scripts/private_key.json

@@ -1,5 +1,15 @@
-# dns-server
+# pagekite-letsencrypt
 Server that helps the Box to announce its local IP address without relying on mDNS, and to register its LetsEncrypt cert for use on its local IP address.
+
+## Architecture
+
+````
+localhost:8000   ----   proxy.js   ----  pagekite.py (backend)  ----  pagekite.py (frontend)  ----  browser
+                              \  \                                                                /  /
+                               \   ----  DNS api  ----  DNS server  -----------------------------   /
+                                \                             /                                    /
+                                  ----  LetsEncrypt API  ----    (-  -  -  -)   LetsEncrypt trust
+````
 
 ## Usage
 Run the server (with DNS on localhost udp port 53 and its API on tcp port 5300):
@@ -7,6 +17,13 @@ Run the server (with DNS on localhost udp port 53 and its API on tcp port 5300):
 cd server
 npm install
 sudo node index test/fixtures/certs/ 53 5300 box.knilxof.org
+````
+
+Or with Docker:
+
+````bash
+docker build -t pagekite-letsencrypt server/
+docker run -d --net=host pagekite-letsencrypt
 ````
 
 Run the tests (from the repo root):
@@ -23,7 +40,5 @@ try it out, run:
 
 ````bash
 cd client
-npm install http-proxy
-python -m SimpleHTTPServer 8000 &
-node proxy.js
+sh ./run.sh knilxof.org box.knilxof.org
 ````

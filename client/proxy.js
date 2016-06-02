@@ -5,13 +5,23 @@ var https = require('https');
 var fs = require('fs');
 var exec = require('child_process').exec;
 var proxy = require('http-proxy').createProxyServer();
-var ports = {
-  backend: 8000,
-  publicLocal: 4334
-};
 var os = require('os');
-var TUNNEL_IPADDR = '52.36.71.23';
-var DNS_ZONE = 'box.knilxof.org';
+
+var args = process.argv;
+if (args.length < 7) {
+  console.log('Usage: node ./proxy.js ns.useraddress.net box.useraddress.net 108.61.190.188 8000 4334');
+  return;
+}
+
+var server=args[2];
+var domain = args[3];
+var tunnelIpAddr = args[4];
+var ports = {
+  backend: args[5],
+  publicLocal: args[6]
+};
+
+console.log('Args:', args);
 
 function run(cmd, ignoreStdErr) {
   console.log(cmd);
@@ -116,8 +126,8 @@ function getLocalIPAddr() {
 function buildPublicLocal(fqdn) {
   var hash = fqdn.split('.')[0];
   return getLocalIPAddr().then(localIpAddr => {
-    var cmd = `cd scripts ; ./update.sh ${hash} ${localIpAddr} \
-${TUNNEL_IPADDR}`;
+    var cmd = `cd scripts ; ./update.sh ${server} ${domain} ${hash} ${localIpAddr} \
+${tunnelIpAddr}`;
     console.log(`Running ${cmd} (this may take a while before you see any \
 output)`);
     return run(cmd, true);
@@ -130,9 +140,9 @@ output)`);
 function proxyPublicLocal(hash) {
   // serve a web server on the local network:
   https.createServer({
-    key: fs.readFileSync(`scripts/certs/${hash}.${DNS_ZONE}/privkey.pem`),
-    cert: fs.readFileSync(`scripts/certs/${hash}.${DNS_ZONE}/cert.pem`),
-    ca: fs.readFileSync(`scripts/certs/${hash}.${DNS_ZONE}/chain.pem`)
+    key: fs.readFileSync(`scripts/certs/${hash}.${domain}/privkey.pem`),
+    cert: fs.readFileSync(`scripts/certs/${hash}.${domain}/cert.pem`),
+    ca: fs.readFileSync(`scripts/certs/${hash}.${domain}/chain.pem`)
   }, (req, res) => {
     proxy.web(req, res, {target: `http://localhost:${ports.backend}`});
   }).listen(ports.publicLocal);
@@ -146,8 +156,8 @@ buildSelfSigned().then(fqdn => {
   return buildPublicLocal(fqdn).then(hash => {
     setTimeout(function() {
       console.log(`Try this: openssl s_client -connect \
-${hash}.${DNS_ZONE}:${ports.publicLocal}`);
-      console.log(`You can also open https://${hash}.${DNS_ZONE}:\
+${hash}.${domain}:${ports.publicLocal}`);
+      console.log(`You can also open https://${hash}.${domain}:\
 ${ports.publicLocal}/ using your browser (the https cert will be signed by the\
 LetsEncrypt staging server).`);
     }, 1000);
