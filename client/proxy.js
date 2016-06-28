@@ -10,6 +10,7 @@ var os = require('os');
 var args = process.argv;
 if (args.length < 7) {
   console.log('Usage: node ./proxy.js ns.useraddress.net box.useraddress.net 108.61.190.188 8000 4334');
+  console.log('You sent', args);
   return;
 }
 
